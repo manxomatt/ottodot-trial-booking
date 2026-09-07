@@ -1,0 +1,74 @@
+:root {
+  color-scheme: light dark;
+  --bg: #fbfaf8;
+  --fg: #1a1a1a;
+  --muted: #6b6b6b;
+  --line: #e2e0dc;
+  --card: #ffffff;
+  --accent: #2f6f4f;
+  --danger: #9b2c2c;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #17181a;
+    --fg: #ececec;
+    --muted: #9a9a9a;
+    --line: #2e3033;
+    --card: #1f2124;
+    --accent: #6cc39a;
+    --danger: #e88;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 15px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+main { max-width: 860px; margin: 0 auto; padding: 32px 20px 64px; }
+h1 { font-size: 22px; margin: 0 0 4px; }
+h2 { font-size: 16px; margin: 28px 0 10px; }
+p.sub { color: var(--muted); margin: 0 0 24px; }
+a { color: var(--accent); }
+
+.card {
+  border: 1px solid var(--line);
+  background: var(--card);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+}
+
+.row { display: flex; justify-content: space-between; gap: 16px; align-items: baseline; }
+.meta { color: var(--muted); font-size: 13px; }
+
+button {
+  font: inherit;
+  padding: 7px 14px;
+  border-radius: 7px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--fg);
+  cursor: pointer;
+}
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+button.danger { border-color: var(--danger); color: var(--danger); }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+select { font: inherit; padding: 6px 8px; border-radius: 7px; border: 1px solid var(--line); background: var(--card); color: var(--fg); }
+
+.pill { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; border: 1px solid var(--line); }
+.pill.confirmed { border-color: var(--accent); color: var(--accent); }
+.pill.pending_payment { border-color: #c08a2e; color: #c08a2e; }
+.pill.payment_failed, .pill.cancelled_no_seat, .pill.expired { border-color: var(--danger); color: var(--danger); }
+
+.error { color: var(--danger); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); }
+th { color: var(--muted); font-weight: 500; }
+code { background: rgba(128,128,128,0.14); padding: 1px 5px; border-radius: 4px; font-size: 13px; }
