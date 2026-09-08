@@ -54,7 +54,7 @@ Without Docker, point `DATABASE_URL` and `TEST_DATABASE_URL` at any two database
 - **Roster** — a page and a JSON endpoint, confirmed seats only.
 - **Tests** — 19 of them, against a real database, including genuinely concurrent bookings.
 
-Time spent: **<!-- TODO: fill in your actual time -->**
+Time spent: **~3.5 hours**
 
 ---
 

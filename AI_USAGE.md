@@ -1,6 +1,5 @@
 # AI usage
 
-> Draft — rewrite anything here that does not match how you actually worked before submitting.
 
 ## Tools
 
