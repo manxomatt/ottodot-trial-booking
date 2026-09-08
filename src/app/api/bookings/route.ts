@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createBooking } from '@/lib/bookings'
+import { createBooking, listActiveBookingsForStudent } from '@/lib/bookings'
 import { errorResponse } from '@/lib/http'
 
 export const dynamic = 'force-dynamic'
@@ -10,6 +10,25 @@ export const dynamic = 'force-dynamic'
  * An `Idempotency-Key` header (or `idempotencyKey` in the body) makes a retried
  * request return the original booking instead of holding a second seat.
  */
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const studentId = searchParams.get('studentId')
+
+    if (!studentId) {
+      return NextResponse.json(
+        { error: 'INVALID_REQUEST', message: 'studentId query param is required.' },
+        { status: 400 },
+      )
+    }
+
+    const bookings = await listActiveBookingsForStudent(studentId)
+    return NextResponse.json({ bookings })
+  } catch (error) {
+    return errorResponse(error)
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json()

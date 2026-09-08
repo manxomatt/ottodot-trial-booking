@@ -32,7 +32,7 @@ Then:
 Verify the invariants without clicking anything:
 
 ```bash
-npm test                    # 19 tests against a real Postgres database
+npm test                    # 21 tests against a real Postgres database
 npm run race-demo           # prints the three race scenarios, step by step
 npm run expire-holds        # the background job, run by hand
 npm run db:reset            # back to the seeded state
@@ -49,12 +49,13 @@ Without Docker, point `DATABASE_URL` and `TEST_DATABASE_URL` at any two database
 - **Booking flow** — choose child → hold a seat → mock payment → status page.
 - **Seat holds** with a TTL (10 minutes, `HOLD_TTL_MINUTES`), released by a background job and
   lazily whenever a class looks full.
+- **Hold cancellation** — parents and ops/teachers can release a hold immediately, putting the seat back on sale.
 - **Payment attempts** recorded separately from bookings, including declines and payments that
   could not be honoured.
 - **Roster** — a page and a JSON endpoint, confirmed seats only.
-- **Tests** — 19 of them, against a real database, including genuinely concurrent bookings.
+- **Tests** — 21 of them, against a real database, including genuinely concurrent bookings.
 
-Time spent: **~3.5 hours**
+Time spent: ~3.5 hours
 
 ---
 
@@ -100,6 +101,7 @@ Only `confirmed` appears on a roster. Nothing else does, ever.
 | `GET` | `/api/parents` | Parents and their children (stands in for an authenticated session) |
 | `POST` | `/api/bookings` | Hold a seat. Accepts an `Idempotency-Key` header |
 | `GET` | `/api/bookings/:id` | Booking status and the latest payment attempt |
+| `DELETE` | `/api/bookings/:id` | Cancel hold and release seat back to inventory immediately |
 | `POST` | `/api/bookings/:id/payment` | Mock payment callback: `{ outcome: 'success' \| 'failure' }` |
 | `GET` | `/api/classes/:id/roster` | The roster — confirmed students, plus holds reported separately |
 

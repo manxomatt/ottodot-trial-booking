@@ -501,6 +501,46 @@ export async function expireHolds(): Promise<number> {
   return withTransaction((client) => releaseExpiredHolds(client))
 }
 
+/**
+ * Cancels an active booking (by parent or ops) and releases the seat immediately
+ * if it was currently holding one.
+ */
+export async function cancelBooking(bookingId: string): Promise<Booking> {
+  return withTransaction(async (client) => {
+    const bookingRows = await client.query<Booking>(
+      'SELECT * FROM bookings WHERE id = $1 FOR UPDATE',
+      [bookingId],
+    )
+    if (bookingRows.rowCount === 0) throw new BookingError('BOOKING_NOT_FOUND')
+    const booking = bookingRows.rows[0]
+
+    // If it holds a seat (pending_payment), return it to the class right now
+    if (booking.status === 'pending_payment') {
+      await releaseSeat(client, booking.trial_class_id)
+    }
+
+    const updated = await client.query<Booking>(
+      `UPDATE bookings
+          SET status = 'cancelled', hold_expires_at = NULL, updated_at = now()
+        WHERE id = $1
+        RETURNING *`,
+      [bookingId],
+    )
+
+    return updated.rows[0]
+  })
+}
+
+/** Returns all active bookings (pending_payment or confirmed) for a given student. */
+export async function listActiveBookingsForStudent(studentId: string): Promise<Booking[]> {
+  return query<Booking>(
+    `SELECT * FROM bookings
+      WHERE student_id = $1 AND status IN ('pending_payment', 'confirmed')
+      ORDER BY created_at DESC`,
+    [studentId],
+  )
+}
+
 /** Test/demo helper: force a booking's hold to look expired. */
 export async function forceExpireHold(bookingId: string): Promise<void> {
   await query(

@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { getRoster, listTrialClasses } from '@/lib/bookings'
+import { ReleaseHoldButton } from './release-hold-button'
 
 export const dynamic = 'force-dynamic'
 
@@ -127,12 +128,44 @@ export default async function AdminPage() {
             )}
 
             {seats_on_hold.length > 0 && (
-              <div className="alert alert-warning" style={{ marginTop: 14, marginBottom: 4 }}>
-                <span>⏱️</span>
-                <div>
-                  <strong>{seats_on_hold.length} seat(s) currently on hold:</strong>{' '}
-                  {seats_on_hold.map((h: any) => h.student_name).join(', ')} is in checkout. Held seats
-                  are strictly segregated and never listed as attending students.
+              <div className="alert alert-warning" style={{ marginTop: 14, marginBottom: 4, flexDirection: 'column', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span>⏱️</span>
+                  <strong>{seats_on_hold.length} seat(s) currently on hold:</strong>
+                  <span className="meta" style={{ color: 'inherit', opacity: 0.85 }}>
+                    (Held seats are segregated and never counted on attendance)
+                  </span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, width: '100%', marginTop: 4 }}>
+                  {seats_on_hold.map((h: any) => (
+                    <div
+                      key={h.booking_id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '6px 10px',
+                        background: 'rgba(255, 255, 255, 0.5)',
+                        borderRadius: 8,
+                        fontSize: 13,
+                      }}
+                    >
+                      <div>
+                        <strong>{h.student_name}</strong>
+                        <span className="meta" style={{ marginLeft: 8 }}>
+                          expires at {new Date(h.hold_expires_at).toLocaleTimeString('en-SG')}
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <Link href={`/bookings/${h.booking_id}`}>
+                          <button type="button" style={{ padding: '3px 8px', fontSize: 11 }}>
+                            View / Checkout
+                          </button>
+                        </Link>
+                        <ReleaseHoldButton bookingId={h.booking_id} studentName={h.student_name} />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}

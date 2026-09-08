@@ -19,8 +19,8 @@ can't honour, what to leave out — those I decided and the model implemented.
 
 ## Where AI clearly helped
 
-The test suite. Once the invariants were settled, generating 19 tests covering duplicates,
-capacity, payment failure, hold expiry, webhook replay and two flavours of concurrency took
+The test suite. Once the invariants were settled, generating 21 tests covering duplicates,
+capacity, payment failure, hold expiry, cancellation, webhook replay and two flavours of concurrency took
 minutes rather than an hour. Writing genuinely concurrent tests by hand — twelve simultaneous
 bookings against one seat, asserting on how each one failed — is exactly the tedious work I would
 have cut for time otherwise, and it is the work that proves the feature.
@@ -66,7 +66,7 @@ is far cheaper than reviewing a thousand lines.
 
 ## How I verified the final implementation
 
-- `npm test` — 19 tests against a real PostgreSQL database, not mocks. The concurrency tests use
+- `npm test` — 21 tests against a real PostgreSQL database, not mocks. The concurrency tests use
   separate connections through the pool, so they exercise real Postgres locking.
 - **Deliberately broke it.** Swapped the atomic seat claim for a read-then-write and confirmed the
   suite goes red, then restored it. Same idea for the capacity constraint: a test tries to oversell

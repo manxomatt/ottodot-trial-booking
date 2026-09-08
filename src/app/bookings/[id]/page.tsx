@@ -104,6 +104,21 @@ export default function BookingStatusPage({ params }: { params: Promise<{ id: st
     }
   }
 
+  async function cancelHold() {
+    if (!confirm('Are you sure you want to release this seat? It will be put back on sale immediately.')) {
+      return
+    }
+    setBusy(true)
+    try {
+      await fetch(`/api/bookings/${id}`, { method: 'DELETE' })
+      await load()
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setBusy(false)
+    }
+  }
+
   if (!booking) {
     return (
       <div className="card" style={{ marginTop: 24 }}>
@@ -211,6 +226,14 @@ export default function BookingStatusPage({ params }: { params: Promise<{ id: st
               onClick={() => pay('failure')}
             >
               {busy ? 'Processing...' : '✕ Simulate Card Decline'}
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={cancelHold}
+              style={{ background: 'transparent', border: '1px dashed var(--danger)', color: 'var(--danger)' }}
+            >
+              {busy ? 'Releasing...' : '🗑️ Cancel Seat Hold'}
             </button>
           </div>
         </div>

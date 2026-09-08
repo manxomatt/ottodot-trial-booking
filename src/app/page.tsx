@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { StudentCombobox } from './student-combobox'
 
 interface Student { id: string; name: string; grade: number }
@@ -46,9 +47,28 @@ export default function BookingPage() {
   const [parents, setParents] = useState<Parent[]>([])
   const [classes, setClasses] = useState<TrialClass[]>([])
   const [studentId, setStudentId] = useState('')
+  const [activeBookings, setActiveBookings] = useState<Record<string, any>>({})
   const [busyClassId, setBusyClassId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+
+  async function loadStudentBookings(sid: string) {
+    if (!sid) {
+      setActiveBookings({})
+      return
+    }
+    try {
+      const res = await fetch(`/api/bookings?studentId=${sid}`)
+      const data = await res.json()
+      const map: Record<string, any> = {}
+      for (const b of data.bookings || []) {
+        map[b.trial_class_id] = b
+      }
+      setActiveBookings(map)
+    } catch (err) {
+      console.error(err)
+    }
+  }
 
   async function load() {
     try {
@@ -58,8 +78,10 @@ export default function BookingPage() {
       ])
       setParents(p.parents || [])
       setClasses(c.classes || [])
-      if (!studentId && p.parents?.[0]?.students?.[0]) {
-        setStudentId(p.parents[0].students[0].id)
+      const initialSid = studentId || p.parents?.[0]?.students?.[0]?.id
+      if (initialSid) {
+        if (!studentId) setStudentId(initialSid)
+        await loadStudentBookings(initialSid)
       }
     } catch (err) {
       console.error(err)
@@ -71,6 +93,26 @@ export default function BookingPage() {
   useEffect(() => {
     load()
   }, [])
+
+  useEffect(() => {
+    if (studentId) {
+      loadStudentBookings(studentId)
+    }
+  }, [studentId])
+
+  async function cancelHoldFromList(bookingId: string) {
+    if (!confirm('Are you sure you want to cancel this seat hold? The seat will immediately be released for others.')) {
+      return
+    }
+    try {
+      const res = await fetch(`/api/bookings/${bookingId}`, { method: 'DELETE' })
+      if (res.ok) {
+        await Promise.all([load(), loadStudentBookings(studentId)])
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
 
   async function book(trialClassId: string) {
     setError(null)
@@ -84,13 +126,13 @@ export default function BookingPage() {
       const data = await response.json()
       if (!response.ok) {
         setError(data.message ?? data.error)
-        await load()
+        await Promise.all([load(), loadStudentBookings(studentId)])
         return
       }
       window.location.href = `/bookings/${data.booking.id}`
     } catch (err: any) {
       setError(err.message || 'Network error occurred')
-      await load()
+      await Promise.all([load(), loadStudentBookings(studentId)])
     } finally {
       setBusyClassId(null)
     }
@@ -176,13 +218,59 @@ export default function BookingPage() {
               </div>
 
               <div>
-                <button
-                  className={isFull ? 'danger' : 'primary'}
-                  disabled={isFull || busyClassId !== null || !studentId}
-                  onClick={() => book(trialClass.id)}
-                >
-                  {isBusy ? 'Holding Seat...' : isFull ? 'Class Full (4/4)' : 'Hold a Seat →'}
-                </button>
+                {activeBookings[trialClass.id]?.status === 'pending_payment' ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <Link href={`/bookings/${activeBookings[trialClass.id].id}`}>
+                        <button
+                          type="button"
+                          className="primary"
+                          style={{
+                            background: 'var(--warning)',
+                            borderColor: 'var(--warning)',
+                            color: '#92400e',
+                            fontWeight: 700,
+                          }}
+                        >
+                          ⏱️ Resume Checkout →
+                        </button>
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => cancelHoldFromList(activeBookings[trialClass.id].id)}
+                        style={{
+                          background: 'transparent',
+                          border: '1px dashed var(--danger)',
+                          color: 'var(--danger)',
+                          padding: '7px 12px',
+                        }}
+                        title="Release this seat hold so others can book"
+                      >
+                        Cancel Hold
+                      </button>
+                    </div>
+                    <span className="meta" style={{ fontSize: 11, color: 'var(--warning)', fontWeight: 600 }}>
+                      Seat held by this student
+                    </span>
+                  </div>
+                ) : activeBookings[trialClass.id]?.status === 'confirmed' ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span className="pill confirmed">✓ Enrolled</span>
+                    <Link href={`/bookings/${activeBookings[trialClass.id].id}`}>
+                      <button type="button" style={{ padding: '7px 12px', fontSize: 13 }}>
+                        View Booking
+                      </button>
+                    </Link>
+                  </div>
+                ) : (
+                  <button
+                    className={isFull ? 'danger' : 'primary'}
+                    disabled={isFull || busyClassId !== null || !studentId}
+                    onClick={() => book(trialClass.id)}
+                  >
+                    {isBusy ? 'Holding Seat...' : isFull ? 'Class Full (4/4)' : 'Hold a Seat →'}
+                  </button>
+                )}
               </div>
             </div>
           </div>

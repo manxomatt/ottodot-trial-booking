@@ -1,5 +1,6 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 import {
+  cancelBooking,
   createBooking,
   expireHolds,
   forceExpireHold,
@@ -293,3 +294,30 @@ describe('payment webhooks', () => {
     expect(await seatsTaken(IDS.classWithSeats)).toBe(2)
   })
 })
+
+describe('cancellation', () => {
+  it('cancels a pending booking and releases the seat immediately', async () => {
+    const booking = await createBooking({ studentId: IDS.olivia, trialClassId: IDS.classOneSeatLeft })
+    expect(await seatsTaken(IDS.classOneSeatLeft)).toBe(4)
+
+    const cancelled = await cancelBooking(booking.id)
+    expect(cancelled.status).toBe('cancelled')
+    expect(cancelled.hold_expires_at).toBeNull()
+    expect(await seatsTaken(IDS.classOneSeatLeft)).toBe(3)
+
+    // Another parent can immediately grab the freed seat
+    const other = await createBooking({ studentId: IDS.chloe, trialClassId: IDS.classOneSeatLeft })
+    expect(other.status).toBe('pending_payment')
+    expect(await seatsTaken(IDS.classOneSeatLeft)).toBe(4)
+  })
+
+  it('allows the same child to rebook after cancellation', async () => {
+    const first = await createBooking({ studentId: IDS.olivia, trialClassId: IDS.classWithSeats })
+    await cancelBooking(first.id)
+
+    const second = await createBooking({ studentId: IDS.olivia, trialClassId: IDS.classWithSeats })
+    expect(second.status).toBe('pending_payment')
+    expect(second.id).not.toBe(first.id)
+  })
+})
+
